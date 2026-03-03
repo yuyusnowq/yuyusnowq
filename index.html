@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宇隅雪Q餅 - 專屬集點卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #FFFDD0; color: #3D2B1F; font-family: 'Noto Sans TC', sans-serif; overflow-x: hidden; }
+        .card { background: white; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
+        .btn-deep-pink { background-color: #E75480; transition: 0.3s; }
+        .btn-deep-pink:hover { background-color: #C2466B; transform: translateY(-2px); }
+        .animate-bounce { animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(0); } }
+        .modal-overlay { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; }
+        .list-item { display: flex; align-items: flex-start; gap: 8px; }
+        .list-num { color: #E75480; font-weight: 800; min-width: 18px; }
+        .btn-line { background-color: #06C755; color: white; transition: 0.3s; }
+        .btn-line:hover { background-color: #05a647; transform: scale(1.02); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="card w-full max-w-sm p-7 text-center border border-pink-50 relative">
+        <h1 class="text-3xl font-bold tracking-wider">宇隅雪Q餅</h1>
+        <p class="text-sm text-pink-400 font-medium tracking-[0.3em] mt-1 mb-6 ml-1">集點卡</p>
+
+        <div id="login-section">
+            <p class="text-sm text-gray-500 mb-6 leading-relaxed">輸入手機號碼<br>開啟您的集點之旅</p>
+            <input type="tel" id="phone" placeholder="0912345678" class="w-full p-4 border-2 border-pink-50 rounded-2xl mb-4 text-center text-xl focus:border-pink-200 focus:outline-none">
+            <button onclick="handleLogin()" class="btn-deep-pink w-full py-4 text-white font-bold text-lg rounded-2xl shadow-lg">進入集點卡</button>
+        </div>
+
+        <div id="loyalty-section" class="hidden">
+            <p class="text-[10px] text-gray-400 mb-2">手機帳號：<span id="display-phone" class="font-bold"></span></p>
+            <div class="relative w-40 h-40 mx-auto mb-5 flex items-center justify-center border-8 border-pink-50 rounded-full">
+                <div class="text-center">
+                    <span id="points-display" class="text-6xl font-black text-pink-400">0</span>
+                    <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Points</p>
+                </div>
+            </div>
+            <p id="msg" class="text-sm font-medium text-gray-600 px-4 py-2 bg-pink-50 rounded-full inline-block mb-4">歡迎回來！</p>
+            
+            <div id="line-bonus-area" class="hidden mt-1 mb-3">
+                <a id="line-link" href="#" target="_blank" class="btn-line w-full py-3 px-4 rounded-2xl font-bold flex items-center justify-center shadow-md">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" class="w-5 h-5 mr-2">
+                    加碼送 0.5 點：加入 LINE
+                </a>
+            </div>
+
+            <div id="reward-btn" class="hidden mt-2 animate-bounce">
+                <button onclick="openRedeemModal()" class="bg-yellow-400 w-full py-3 rounded-2xl text-white font-black shadow-xl border-b-4 border-yellow-600">🎁 點我領取贈品</button>
+            </div>
+        </div>
+
+        <div class="mt-10 pt-6 border-t border-gray-100">
+            <div class="mb-6 space-y-1 text-center">
+                <p class="text-[10px] text-pink-400 font-bold leading-tight">● 每集滿 10 點可兌換精選雪Q餅乙份 ●</p>
+                <p class="text-[9px] text-pink-400 font-medium leading-tight">(一個手機號碼限兌換一份)</p>
+                <p class="text-[9px] text-pink-600 font-bold leading-tight pt-1">● 1包=1點，每包QR碼皆可累計，記得全部掃描喔 ●</p>
+            </div>
+            <div class="space-y-1 text-center">
+                <p class="text-[10px] text-gray-400 leading-tight">● 點數已與手機號碼綁定，換機登入不遺失 ●</p>
+                <p class="text-[9px] text-gray-300 leading-tight">手機號碼僅供集點核對，宇隅絕不向外洩漏。</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-modal" class="hidden fixed modal-overlay inset-0 flex items-center justify-center p-6 text-left">
+        <div class="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl">
+            <h3 class="text-xl font-black mb-6 text-center text-pink-500 tracking-tight">🎉 恭喜集滿 10 點！</h3>
+            <div class="space-y-5 text-gray-600 leading-relaxed">
+                <div class="list-item"><span class="list-num">1.</span><p class="text-sm">請<strong>截圖</strong>此集點卡畫面。</p></div>
+                <div class="list-item"><span class="list-num">2.</span><p class="text-sm">下次下單時，透過<strong>『聊聊』</strong>或<strong>『備註』</strong>告知您已集滿 10 點。</p></div>
+                <div class="list-item"><span class="list-num">3.</span><p class="text-sm text-pink-500 font-medium">請務必註明您的<strong>集點手機號碼</strong>，我們確認後將隨貨附上贈品！</p></div>
+            </div>
+            <button onclick="closeRedeemModal()" class="mt-8 w-full py-4 btn-deep-pink text-white font-bold rounded-2xl shadow-lg active:scale-95">確定</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://sheetdb.io/api/v1/dkdi92n4hjamk'; 
+        const LINE_OA_ID = '@756qtkxr'; // 您的 LINE ID
+
+        function openRedeemModal() { document.getElementById('custom-modal').classList.remove('hidden'); }
+        function closeRedeemModal() { document.getElementById('custom-modal').classList.add('hidden'); }
+
+        // 無論幾點都強制顯示按鈕的邏輯
+        function checkLineButton(phone) {
+            const lineArea = document.getElementById('line-bonus-area');
+            const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
+            document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
+            lineArea.classList.remove('hidden'); // 永久顯示
+        }
+
+        async function handleLogin() {
+            const phone = document.getElementById('phone').value.trim();
+            if(!phone || phone.length < 10) return alert('請輸入完整手機號碼');
+            localStorage.setItem('yuyu_phone', phone);
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('loyalty-section').classList.remove('hidden');
+            document.getElementById('display-phone').innerText = phone;
+            await ensureUserExists(phone);
+            setTimeout(() => { processCollection(phone); }, 1000); 
+        }
+
+        async function ensureUserExists(phone) {
+            try {
+                const res = await fetch(`${API_URL}/search?phone=${phone}`);
+                const data = await res.json();
+                let pts = 0;
+                if(data.length === 0) {
+                    await fetch(API_URL, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({"data": [{"phone": phone, "points": 0, "used_codes": ""}]})
+                    });
+                } else {
+                    pts = parseFloat(data[0].points || 0);
+                    document.getElementById('points-display').innerText = pts;
+                    if(pts >= 10) document.getElementById('reward-btn').classList.remove('hidden');
+                }
+                checkLineButton(phone); // 登入即顯示 LINE 按鈕
+            } catch (e) { console.error(e); }
+        }
+
+        async function processCollection(phone) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if(!code) return;
+            document.getElementById('msg').innerText = "序號驗證中...";
+            try {
+                const codeRes = await fetch(`${API_URL}/search?code=${code}&sheet=valid_codes`);
+                const codeData = await codeRes.json();
+                if(codeData.length > 0 && codeData[0].status === 'unused') {
+                    const userRes = await fetch(`${API_URL}/search?phone=${phone}`);
+                    const userData = await userRes.json();
+                    const newPoints = parseFloat(userData[0].points || 0) + 1;
+                    await fetch(`${API_URL}/phone/${phone}`, {
+                        method: 'PATCH', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({"data": {"points": newPoints}})
+                    });
+                    await fetch(`${API_URL}/code/${code}?sheet=valid_codes`, {
+                        method: 'PATCH', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({"data": {"status": "used"}})
+                    });
+                    document.getElementById('points-display').innerText = newPoints;
+                    if (newPoints >= 10) {
+                        document.getElementById('reward-btn').classList.remove('hidden');
+                        document.getElementById('msg').innerText = "🎊 太棒了！已達成領獎資格";
+                    } else {
+                        document.getElementById('msg').innerText = "🎉 集點成功！已加 1 點";
+                    }
+                } else { document.getElementById('msg').innerText = "❌ 序號無效或已被掃描"; }
+            } catch (e) { document.getElementById('msg').innerText = "系統繁忙，請稍後再試"; }
+        }
+
+        window.onload = () => {
+            const savedPhone = localStorage.getItem('yuyu_phone');
+            if(savedPhone) {
+                document.getElementById('phone').value = savedPhone;
+                handleLogin();
+            }
+        };
+    </script>
+</body>
+</html>
