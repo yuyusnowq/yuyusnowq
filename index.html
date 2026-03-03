@@ -26,26 +26,25 @@
         <p class="text-sm text-pink-400 font-medium tracking-[0.3em] mt-1 mb-6 ml-1">集點卡</p>
 
         <div id="login-section">
-            <p class="text-sm text-gray-500 mb-5 leading-relaxed">輸入手機號碼<br>開啟您的集點之旅</p>
+            <p class="text-sm text-gray-500 mb-6 leading-relaxed">輸入手機號碼<br>開啟您的集點之旅</p>
             <input type="tel" id="phone" placeholder="0912345678" class="w-full p-4 border-2 border-pink-50 rounded-2xl mb-4 text-center text-xl focus:border-pink-200 focus:outline-none">
             <button onclick="handleLogin()" class="btn-deep-pink w-full py-4 text-white font-bold text-lg rounded-2xl shadow-lg">進入集點卡</button>
         </div>
 
         <div id="loyalty-section" class="hidden">
-            <p class="text-[10px] text-gray-400 mb-1">手機帳號：<span id="display-phone" class="font-bold"></span></p>
+            <p class="text-[10px] text-gray-400 mb-2">手機帳號：<span id="display-phone" class="font-bold"></span></p>
             <div class="relative w-40 h-40 mx-auto mb-5 flex items-center justify-center border-8 border-pink-50 rounded-full">
                 <div class="text-center">
                     <span id="points-display" class="text-6xl font-black text-pink-400">0</span>
                     <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Points</p>
                 </div>
             </div>
-            <p id="msg" class="text-sm font-medium text-gray-600 px-4 py-2 bg-pink-50 rounded-full inline-block mb-3">歡迎回來！</p>
+            <p id="msg" class="text-sm font-medium text-gray-600 px-4 py-2 bg-pink-50 rounded-full inline-block mb-4">歡迎回來！</p>
             
             <div id="line-bonus-area" class="hidden mt-1 mb-3">
-                <a id="line-link" href="#" target="_blank" class="btn-line w-full py-3 px-4 rounded-2xl font-bold flex flex-col items-center justify-center shadow-md">
-                    <div class="flex items-center">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" class="w-5 h-5 mr-2">
-                        <span>🎁 加 LINE 領加碼點數！</span>
+                <a id="line-link" href="#" target="_blank" class="btn-line w-full py-3 px-4 rounded-2xl font-bold flex items-center justify-center shadow-md">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" class="w-5 h-5 mr-2">
+<span>🎁 加 LINE 領加碼點數！</span>
                     </div>
                 </a>
                 <p class="text-[9px] text-gray-400 mt-2">
@@ -53,18 +52,18 @@
                 </p>
             </div>
 
-            <div id="reward-btn" class="hidden mt-1 animate-bounce">
+            <div id="reward-btn" class="hidden mt-2 animate-bounce">
                 <button onclick="openRedeemModal()" class="bg-yellow-400 w-full py-3 rounded-2xl text-white font-black shadow-xl border-b-4 border-yellow-600">🎁 點我領取贈品</button>
             </div>
         </div>
 
-        <div class="mt-6 pt-5 border-t border-gray-100">
-            <div class="mb-4 space-y-0.5 text-center">
+        <div class="mt-10 pt-6 border-t border-gray-100">
+            <div class="mb-6 space-y-1 text-center">
                 <p class="text-[10px] text-pink-400 font-bold leading-tight">● 每集滿 10 點可兌換精選雪Q餅乙份 ●</p>
-                <p class="text-[9px] text-pink-400 font-medium leading-tight opacity-80">(一個手機號碼限兌換一份)</p>
+                <p class="text-[9px] text-pink-400 font-medium leading-tight">(一個手機號碼限兌換一份)</p>
                 <p class="text-[9px] text-pink-600 font-bold leading-tight pt-1">● 1包=1點，每包QR碼皆可累計，記得全部掃描喔 ●</p>
             </div>
-            <div class="space-y-0.5 text-center">
+            <div class="space-y-1 text-center">
                 <p class="text-[10px] text-gray-400 leading-tight">● 點數已與手機號碼綁定，換機登入不遺失 ●</p>
                 <p class="text-[9px] text-gray-300 leading-tight">手機號碼僅供集點核對，宇隅絕不向外洩漏。</p>
             </div>
@@ -77,7 +76,7 @@
             <div class="space-y-5 text-gray-600 leading-relaxed">
                 <div class="list-item"><span class="list-num">1.</span><p class="text-sm">請<strong>截圖</strong>此集點卡畫面。</p></div>
                 <div class="list-item"><span class="list-num">2.</span><p class="text-sm">下次下單時，透過<strong>「聊聊」</strong>或<strong>「備註」</strong>告知您已集滿 10 點。</p></div>
-                <div class="list-item"><span class="list-num">3.</span><p class="text-sm text-pink-500 font-medium">請務必註明您的<strong>集點手機號碼</strong>，確認後將隨貨送上贈品！</p></div>
+                <div class="list-item"><span class="list-num">3.</span><p class="text-sm text-pink-500 font-medium">請務必註明您的<strong>集點手機號碼</strong>，我們確認後將隨貨附上贈品！</p></div>
             </div>
             <button onclick="closeRedeemModal()" class="mt-8 w-full py-4 btn-deep-pink text-white font-bold rounded-2xl shadow-lg active:scale-95">確定</button>
         </div>
@@ -85,19 +84,17 @@
 
     <script>
         const API_URL = 'https://sheetdb.io/api/v1/dkdi92n4hjamk'; 
-        const LINE_OA_ID = '@601mrtut'; 
+        const LINE_OA_ID = '@756qtkxr'; // 您的 LINE ID
 
         function openRedeemModal() { document.getElementById('custom-modal').classList.remove('hidden'); }
         function closeRedeemModal() { document.getElementById('custom-modal').classList.add('hidden'); }
 
-        function checkLineButton(phone, pts) {
+        // 無論幾點都強制顯示按鈕的邏輯
+        function checkLineButton(phone) {
             const lineArea = document.getElementById('line-bonus-area');
-                const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
-                document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
-                lineArea.classList.remove('hidden');
-            } else {
-                lineArea.classList.add('hidden');
-            }
+            const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
+            document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
+            lineArea.classList.remove('hidden'); // 永久顯示
         }
 
         async function handleLogin() {
@@ -126,7 +123,7 @@
                     document.getElementById('points-display').innerText = pts;
                     if(pts >= 10) document.getElementById('reward-btn').classList.remove('hidden');
                 }
-                checkLineButton(phone, pts);
+                checkLineButton(phone); // 登入即顯示 LINE 按鈕
             } catch (e) { console.error(e); }
         }
 
@@ -151,7 +148,6 @@
                         body: JSON.stringify({"data": {"status": "used"}})
                     });
                     document.getElementById('points-display').innerText = newPoints;
-                    checkLineButton(phone, newPoints);
                     if (newPoints >= 10) {
                         document.getElementById('reward-btn').classList.remove('hidden');
                         document.getElementById('msg').innerText = "🎊 太棒了！已達成領獎資格";
