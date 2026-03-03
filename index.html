@@ -92,7 +92,6 @@
 
         function checkLineButton(phone, pts) {
             const lineArea = document.getElementById('line-bonus-area');
-            if (pts < 10) {
                 const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
                 document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
                 lineArea.classList.remove('hidden');
