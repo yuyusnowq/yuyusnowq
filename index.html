@@ -17,7 +17,6 @@
         .list-item { display: flex; align-items: flex-start; gap: 8px; }
         .list-num { color: #E75480; font-weight: 800; min-width: 18px; }
         .btn-line { background-color: #06C755; color: white; transition: 0.3s; }
-        .btn-line:hover { background-color: #05a647; transform: scale(1.02); }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -73,22 +72,6 @@
                 <p class="text-[10px] text-pink-600 font-bold leading-tight pt-1">● 大包 1 點 / 小包 0.5 點 ●</p>
                 <p class="text-[9px] text-pink-600 font-bold leading-tight">● 每包QR碼皆可累計，記得全部掃描喔 ●</p>
             </div>
-            <div class="space-y-1 text-center">
-                <p class="text-[10px] text-gray-400 leading-tight">● 點數已與手機號碼綁定，換機登入不遺失 ●</p>
-                <p class="text-[9px] text-gray-300 leading-tight">手機號碼僅供集點核對，宇隅絕不向外洩漏。</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="custom-modal" class="hidden fixed modal-overlay inset-0 flex items-center justify-center p-6 text-left">
-        <div class="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl">
-            <h3 class="text-xl font-black mb-6 text-center text-pink-500 tracking-tight">🎉 恭喜集滿 10 點！</h3>
-            <div class="space-y-5 text-gray-600 leading-relaxed">
-                <div class="list-item"><span class="list-num">1.</span><p class="text-sm">請<strong>截圖</strong>此集點卡畫面。</p></div>
-                <div class="list-item"><span class="list-num">2.</span><p class="text-sm">下次下單時，透過<strong>「聊聊」</strong>或<strong>「備註」</strong>告知您已集滿 10 點。</p></div>
-                <div class="list-item"><span class="list-num">3.</span><p class="text-sm text-pink-500 font-medium">請務必註明您的<strong>集點手機號碼</strong>，我們確認後將隨貨附上贈品！</p></div>
-            </div>
-            <button onclick="closeRedeemModal()" class="mt-8 w-full py-4 btn-deep-pink text-white font-bold rounded-2xl shadow-lg active:scale-95">確定</button>
         </div>
     </div>
 
@@ -96,15 +79,8 @@
     const API_URL = 'https://sheetdb.io/api/v1/dkdi92n4hjamk'; 
     const LINE_OA_ID = '@756qtkxr'; 
 
-    function openRedeemModal() { document.getElementById('custom-modal').classList.remove('hidden'); }
-    function closeRedeemModal() { document.getElementById('custom-modal').classList.add('hidden'); }
-
-    function checkLineButton(phone) {
-        const lineArea = document.getElementById('line-bonus-area');
-        const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
-        document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
-        lineArea.classList.remove('hidden');
-    }
+    // 重要：請確認您的分頁名稱是否正確
+    const CODE_SHEET = 'valid_codes'; // 序號存放的分頁
 
     async function handleLogin() {
         const phone = document.getElementById('phone').value.trim();
@@ -114,19 +90,14 @@
         document.getElementById('loyalty-section').classList.remove('hidden');
         document.getElementById('display-phone').innerText = phone;
         await ensureUserExists(phone);
-        // 延遲一秒檢查掃碼序號
         setTimeout(() => { processCollection(phone); }, 1000); 
     }
 
-    // 修正點：確保此處呼叫 processCollection 時有傳入 code
     async function handleManualSubmit() {
         const codeInput = document.getElementById('manual-code');
         const code = codeInput.value.trim().toUpperCase(); 
         const phone = localStorage.getItem('yuyu_phone');
-        
         if(!code) return alert('請先輸入序號喔！');
-        if(!phone) return alert('請先登入手機號碼');
-        
         await processCollection(phone, code);
         codeInput.value = ''; 
     }
@@ -145,72 +116,57 @@
                 document.getElementById('points-display').innerText = pts;
                 if(pts >= 10) document.getElementById('reward-btn').classList.remove('hidden');
             }
-            checkLineButton(phone); 
-        } catch (e) { console.error("登入檢查失敗:", e); }
+            const lineArea = document.getElementById('line-bonus-area');
+            const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
+            document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
+            lineArea.classList.remove('hidden');
+        } catch (e) { console.error(e); }
     }
 
-    // 【核心修正】：增加 manualCode 接收位，並加入除錯回饋
     async function processCollection(phone, manualCode = null) {
         const urlParams = new URLSearchParams(window.location.search);
         const code = manualCode || urlParams.get('code');
-        
         if(!code) return; 
 
         document.getElementById('msg').innerText = "序號驗證中...";
         try {
-            // 1. 查找序號
-            const codeRes = await fetch(`${API_URL}/search?code=${code}&sheet=valid_codes`);
+            // 1. 搜尋序號
+            const codeRes = await fetch(`${API_URL}/search?code=${code}&sheet=${CODE_SHEET}`);
             const codeData = await codeRes.json();
             
             if(codeData.length > 0 && codeData[0].status === 'unused') {
                 const pointValue = parseFloat(codeData[0].value || 1); 
 
-                // 2. 查找當前用戶點數
+                // 2. 搜尋用戶
                 const userRes = await fetch(`${API_URL}/search?phone=${phone}`);
                 const userData = await userRes.json();
                 const newPoints = parseFloat(userData[0].points || 0) + pointValue; 
 
-                // 3. 更新試算表用戶點數
-                const updateRes = await fetch(`${API_URL}/phone/${phone}`, {
+                // 3. 更新點數
+                const patchRes = await fetch(`${API_URL}/phone/${phone}`, {
                     method: 'PATCH', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({"data": {"points": newPoints}})
                 });
 
-                if (!updateRes.ok) throw new Error("資料庫連線被拒絕 (請檢查 SheetDB 白名單設定)");
+                if(!patchRes.ok) throw new Error("資料庫更新失敗，請檢查欄位名稱");
 
-                // 4. 標記序號已使用
-                await fetch(`${API_URL}/code/${code}?sheet=valid_codes`, {
+                // 4. 標記已使用
+                await fetch(`${API_URL}/code/${code}?sheet=${CODE_SHEET}`, {
                     method: 'PATCH', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({"data": {"status": "used"}})
                 });
 
-                // 更新畫面
                 document.getElementById('points-display').innerText = newPoints;
-                if (newPoints >= 10) {
-                    document.getElementById('reward-btn').classList.remove('hidden');
-                    document.getElementById('msg').innerText = "🎊 太棒了！已達成領獎資格";
-                } else {
-                    document.getElementById('msg').innerText = `🎉 集點成功！已加 ${pointValue} 點`;
-                }
-
+                document.getElementById('msg').innerText = `🎉 集點成功！已加 ${pointValue} 點`;
                 if(!manualCode) window.history.replaceState({}, document.title, window.location.pathname);
             } else {
                 document.getElementById('msg').innerText = "❌ 序號無效或已被掃描";
             }
         } catch (e) { 
-            console.error(e);
-            alert("⚠️ 系統連線發生問題！\n可能原因：SheetDB 未授權 GitHub 網域。\n錯誤內容：" + e.message);
+            alert("⚠️ 錯誤：" + e.message);
             document.getElementById('msg').innerText = "系統繁忙，請稍後再試"; 
         }
     }
-
-    window.onload = () => {
-        const savedPhone = localStorage.getItem('yuyu_phone');
-        if(savedPhone) {
-            document.getElementById('phone').value = savedPhone;
-            handleLogin();
-        }
-    };
 </script>
 </body>
 </html>
