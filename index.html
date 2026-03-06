@@ -50,7 +50,15 @@
         ※ 進入聊天室後按 <span class="text-pink-500 font-bold">「傳送」</span> 才算成功領取喔！
     </p>
 </div>
-
+<div id="manual-input-section" class="mt-4 pt-4 border-t border-gray-100">
+    <p class="text-[10px] text-gray-400 mb-2 font-medium">無法掃碼？請輸入包裝內序號：</p>
+    <div class="flex gap-2">
+        <input type="text" id="manual-code" placeholder="輸入序號" 
+               class="flex-1 p-3 border-2 border-pink-50 rounded-xl text-center text-sm focus:border-pink-200 outline-none uppercase">
+        <button onclick="handleManualSubmit()" 
+                class="bg-pink-400 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-sm active:scale-95">送出</button>
+    </div>
+</div>
             <div id="reward-btn" class="hidden mt-2 animate-bounce">
                 <button onclick="openRedeemModal()" class="bg-yellow-400 w-full py-3 rounded-2xl text-white font-black shadow-xl border-b-4 border-yellow-600">🎁 點我領取贈品</button>
             </div>
@@ -108,7 +116,19 @@
             await ensureUserExists(phone);
             setTimeout(() => { processCollection(phone); }, 1000); 
         }
-
+// 處理手動輸入序號的動作
+async function handleManualSubmit() {
+    const codeInput = document.getElementById('manual-code');
+    const code = codeInput.value.trim().toUpperCase(); // 自動轉大寫比對
+    const phone = localStorage.getItem('yuyu_phone');
+    
+    if(!code) return alert('請先輸入序號喔！');
+    if(!phone) return alert('請先登入手機號碼');
+    
+    // 呼叫原本的處理函數進行加點
+    await processCollection(phone, code);
+    codeInput.value = ''; // 成功後自動清空
+}
         async function ensureUserExists(phone) {
             try {
                 const res = await fetch(`${API_URL}/search?phone=${phone}`);
