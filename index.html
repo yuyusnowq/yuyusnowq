@@ -152,11 +152,14 @@
                 const userRes = await fetch(`${API_URL}/search?phone=${phone}`);
                 const userData = await userRes.json();
                 const newPoints = parseFloat(userData[0].points || 0) + pointValue; 
-
+// 取得舊紀錄並加上新序號
+const oldCodes = userData[0].used_codes || "";
+const updatedCodes = oldCodes ? `${oldCodes},${code}` : code;
                 // 3. 更新點數
                 const patchRes = await fetch(`${API_URL}/phone/${phone}`, {
                     method: 'PATCH', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({"data": {"points": newPoints}})
+                   // 修改後的第 161 行
+body: JSON.stringify({"data": {"points": newPoints, "used_codes": updatedCodes}})
                 });
 
                 if(!patchRes.ok) throw new Error("資料庫更新失敗，請檢查欄位名稱");
