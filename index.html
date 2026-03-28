@@ -104,83 +104,102 @@
         setTimeout(() => { processCollection(phone); }, 1000); 
     }
 
-    async function handleManualSubmit() {
-        const codeInput = document.getElementById('manual-code');
-        const code = codeInput.value.trim().toUpperCase(); 
-        const phone = localStorage.getItem('yuyu_phone');
-        if(!code) return alert('請先輸入序號喔！');
-        await processCollection(phone, code);
-        codeInput.value = ''; 
-    }
+// 1. 強化版手動送出：加入按鈕禁用機制，防止連點
+async function handleManualSubmit() {
+    const btn = event.target; // 取得點擊的按鈕
+    const codeInput = document.getElementById('manual-code');
+    const code = codeInput.value.trim().toUpperCase();
+    const phone = localStorage.getItem('yuyu_phone');
 
-    async function ensureUserExists(phone) {
-        try {
-            const res = await fetch(`${API_URL}/search?phone=${phone}`);
-            const data = await res.json();
-            if(data.length === 0) {
-                await fetch(API_URL, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({"data": [{"phone": phone, "points": 0, "used_codes": ""}]})
-                });
-            } else {
-                const pts = parseFloat(data[0].points || 0);
-                document.getElementById('points-display').innerText = pts;
-                if(pts >= 10) document.getElementById('reward-btn').classList.remove('hidden');
-            }
-            const lineArea = document.getElementById('line-bonus-area');
-            const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
-            document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
-            lineArea.classList.remove('hidden');
-        } catch (e) { console.error(e); }
-    }
+    if(!code) return alert('請先輸入序號喔！');
+    if(!phone) return alert('請先登入手機號碼');
 
-    async function processCollection(phone, manualCode = null) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = manualCode || urlParams.get('code');
-        if(!code) return; 
+    // --- 防連點開始 ---
+    btn.disabled = true; 
+    const originalText = btn.innerText;
+    btn.innerText = "處理中...";
+    // -----------------
 
-        document.getElementById('msg').innerText = "序號驗證中...";
-        try {
-            // 1. 搜尋序號
-            const codeRes = await fetch(`${API_URL}/search?code=${code}&sheet=${CODE_SHEET}`);
-            const codeData = await codeRes.json();
+    await processCollection(phone, code);
+
+    // --- 恢復按鈕 ---
+    btn.disabled = false;
+    btn.innerText = originalText;
+    codeInput.value = ''; 
+}
+
+// 2. 強化版處理函數：加入本地端重複檢查
+async function processCollection(phone, manualCode = null) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = manualCode || urlParams.get('code');
+    if(!code) return; 
+
+    const msgElement = document.getElementById('msg');
+    msgElement.innerText = "序號驗證中...";
+    
+    try {
+        // 步驟 1: 搜尋序號
+        const codeRes = await fetch(`${API_URL}/search?code=${code}&sheet=${CODE_SHEET}`);
+        const codeData = await codeRes.json();
+        
+        if(codeData.length > 0 && codeData[0].status === 'unused') {
+            const pointValue = parseFloat(codeData[0].value || 1); 
+
+            // 步驟 2: 搜尋用戶
+            const userRes = await fetch(`${API_URL}/search?phone=${phone}`);
+            const userData = await userRes.json();
             
-            if(codeData.length > 0 && codeData[0].status === 'unused') {
-                const pointValue = parseFloat(codeData[0].value || 1); 
-
-                // 2. 搜尋用戶
-                const userRes = await fetch(`${API_URL}/search?phone=${phone}`);
-                const userData = await userRes.json();
-                const newPoints = parseFloat(userData[0].points || 0) + pointValue; 
-// 取得舊紀錄並加上新序號
-const oldCodes = userData[0].used_codes || "";
-const updatedCodes = oldCodes ? `${oldCodes},${code}` : code;
-                // 3. 更新點數
-                const patchRes = await fetch(`${API_URL}/phone/${phone}`, {
-                    method: 'PATCH', headers: {'Content-Type': 'application/json'},
-                   // 修改後的第 161 行
-body: JSON.stringify({"data": {"points": newPoints, "used_codes": updatedCodes}})
-                });
-
-                if(!patchRes.ok) throw new Error("資料庫更新失敗，請檢查欄位名稱");
-
-                // 4. 標記已使用
-                await fetch(`${API_URL}/code/${code}?sheet=${CODE_SHEET}`, {
-                    method: 'PATCH', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({"data": {"status": "used"}})
-                });
-
-                document.getElementById('points-display').innerText = newPoints;
-                document.getElementById('msg').innerText = `🎉 集點成功！已加 ${pointValue} 點`;
-                if(!manualCode) window.history.replaceState({}, document.title, window.location.pathname);
-            } else {
-                document.getElementById('msg').innerText = "❌ 序號無效或已被掃描";
+            if (userData.length === 0) {
+                msgElement.innerText = "❌ 找不到用戶資料，請重新登入";
+                return;
             }
-        } catch (e) { 
-            alert("⚠️ 錯誤：" + e.message);
-            document.getElementById('msg').innerText = "系統繁忙，請稍後再試"; 
+
+            // --- 二次驗證：檢查序號是否已經在 used_codes 清單裡了 ---
+            const oldCodes = userData[0].used_codes || "";
+            const codeList = oldCodes.split(','); 
+            if (codeList.includes(code)) {
+                msgElement.innerText = "❌ 此序號您已集點過囉！";
+                return;
+            }
+            // ---------------------------------------------------
+
+            const updatedCodes = oldCodes ? `${oldCodes},${code}` : code; 
+            const newPoints = parseFloat(userData[0].points || 0) + pointValue; 
+
+            // 步驟 3: 更新用戶 (點數 + 序號清單)
+            const patchRes = await fetch(`${API_URL}/phone/${phone}`, {
+                method: 'PATCH', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({"data": {"points": newPoints, "used_codes": updatedCodes}})
+            });
+
+            if(!patchRes.ok) throw new Error("資料庫更新失敗");
+
+            // 步驟 4: 標記序號已使用
+            await fetch(`${API_URL}/code/${code}?sheet=${CODE_SHEET}`, {
+                method: 'PATCH', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({"data": {"status": "used"}})
+            });
+
+            // 更新畫面顯示
+            document.getElementById('points-display').innerText = newPoints;
+            msgElement.innerText = `🎉 集點成功！已加 ${pointValue} 點`;
+            
+            if (newPoints >= 10) {
+                document.getElementById('reward-btn').classList.remove('hidden');
+                msgElement.innerText = "🎊 太棒了！已達成領獎資格";
+            }
+
+            if(!manualCode) window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            msgElement.innerText = "❌ 序號無效或已被掃描";
         }
+    } catch (e) { 
+        console.error(e);
+        msgElement.innerText = "系統繁忙，請稍後再試"; 
     }
+}
 </script>
 </body>
 </html>
