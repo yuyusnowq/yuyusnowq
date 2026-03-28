@@ -94,11 +94,11 @@
     </div>
 
 <script>
-    const API_URL = 'https://sheetdb.io/api/v1/dkdi92n4hjamk'; 
-    const LINE_OA_ID = '@756qtkxr'; 
-    const CODE_SHEET = 'valid_codes';
+  // 1. 貼上您剛才在 Google 得到的那個「網頁應用程式網址」
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzelXhPpPepylMsRRHc_pQMZGAdkrkB5BAuwUS_XMHGZS5LpcG-2MulVIwS65xQrw_v/exec'; 
+    const LINE_OA_ID = '@756qtkxr';
 
-    // 補回遺失的彈窗控制函數
+    // 補回彈窗控制函數
     function openRedeemModal() { document.getElementById('custom-modal').classList.remove('hidden'); }
     function closeRedeemModal() { document.getElementById('custom-modal').classList.add('hidden'); }
 
@@ -110,24 +110,29 @@
         document.getElementById('loyalty-section').classList.remove('hidden');
         document.getElementById('display-phone').innerText = phone;
         await ensureUserExists(phone);
+        // 延遲一秒自動檢查網址中是否有序號（掃碼登入情境）
         setTimeout(() => { processCollection(phone); }, 1000); 
     }
 
-    // 補回遺失的初始化用戶函數
     async function ensureUserExists(phone) {
         try {
-            const res = await fetch(`${API_URL}/search?phone=${phone}`);
+            const res = await fetch(`${GAS_URL}?action=searchPhone&phone=${phone}`);
             const data = await res.json();
-            if(data.length === 0) {
-                await fetch(API_URL, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({"data": [{"phone": phone, "points": 0, "used_codes": ""}]})
+            
+            if(Object.keys(data).length === 0) {
+                // 新朋友：建立資料
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'createUser', phone: phone })
                 });
             } else {
-                const pts = parseFloat(data[0].points || 0);
+                // 老朋友：讀取點數
+                const pts = parseFloat(data.points || 0);
                 document.getElementById('points-display').innerText = pts;
                 if(pts >= 10) document.getElementById('reward-btn').classList.remove('hidden');
             }
+            
+            // 設定 LINE 連結
             const lineArea = document.getElementById('line-bonus-area');
             const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
             document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
@@ -136,7 +141,7 @@
     }
 
     async function handleManualSubmit() {
-        const btn = event.target; 
+        const btn = event.target;
         const codeInput = document.getElementById('manual-code');
         const code = codeInput.value.trim().toUpperCase();
         const phone = localStorage.getItem('yuyu_phone');
@@ -144,7 +149,8 @@
         if(!code) return alert('請先輸入序號喔！');
         if(!phone) return alert('請先登入手機號碼');
 
-        btn.disabled = true; 
+        // 防連點保護
+        btn.disabled = true;
         const originalText = btn.innerText;
         btn.innerText = "處理中...";
 
@@ -164,41 +170,35 @@
         msgElement.innerText = "序號驗證中...";
         
         try {
-            const codeRes = await fetch(`${API_URL}/search?code=${code}&sheet=${CODE_SHEET}`);
+            // 驗證序號
+            const codeRes = await fetch(`${GAS_URL}?action=searchCode&code=${code}`);
             const codeData = await codeRes.json();
             
-            if(codeData.length > 0 && codeData[0].status === 'unused') {
-                const pointValue = parseFloat(codeData[0].value || 1); 
-                const userRes = await fetch(`${API_URL}/search?phone=${phone}`);
+            if(Object.keys(codeData).length > 0 && codeData.status === 'unused') {
+                const pointValue = parseFloat(codeData.value || 1); 
+                const userRes = await fetch(`${GAS_URL}?action=searchPhone&phone=${phone}`);
                 const userData = await userRes.json();
                 
-                if (userData.length === 0) {
-                    msgElement.innerText = "❌ 找不到用戶資料，請重新登入";
-                    return;
-                }
-
-                const oldCodes = userData[0].used_codes || "";
-                const codeList = oldCodes.split(','); 
-                if (codeList.includes(code)) {
+                // 重複檢查
+                const oldCodes = userData.used_codes || "";
+                if (oldCodes.split(',').includes(code)) {
                     msgElement.innerText = "❌ 此序號您已集點過囉！";
                     return;
                 }
 
                 const updatedCodes = oldCodes ? `${oldCodes},${code}` : code; 
-                const newPoints = parseFloat(userData[0].points || 0) + pointValue; 
+                const newPoints = parseFloat(userData.points || 0) + pointValue; 
 
-                const patchRes = await fetch(`${API_URL}/phone/${phone}`, {
-                    method: 'PATCH', 
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({"data": {"points": newPoints, "used_codes": updatedCodes}})
-                });
-
-                if(!patchRes.ok) throw new Error("資料庫更新失敗");
-
-                await fetch(`${API_URL}/code/${code}?sheet=${CODE_SHEET}`, {
-                    method: 'PATCH', 
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({"data": {"status": "used"}})
+                // 一次性更新點數與鎖定序號（省流量、保證同步）
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'updatePoints', 
+                        phone: phone, 
+                        points: newPoints, 
+                        used_codes: updatedCodes,
+                        code: code 
+                    })
                 });
 
                 document.getElementById('points-display').innerText = newPoints;
@@ -208,7 +208,6 @@
                     document.getElementById('reward-btn').classList.remove('hidden');
                     msgElement.innerText = "🎊 太棒了！已達成領獎資格";
                 }
-
                 if(!manualCode) window.history.replaceState({}, document.title, window.location.pathname);
             } else {
                 msgElement.innerText = "❌ 序號無效或已被掃描";
@@ -219,6 +218,7 @@
         }
     }
 
+    // 自動登入功能
     window.onload = () => {
         const savedPhone = localStorage.getItem('yuyu_phone');
         if(savedPhone) {
@@ -226,6 +226,5 @@
             handleLogin();
         }
     };
-</script>
 </body>
 </html>
