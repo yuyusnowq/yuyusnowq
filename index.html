@@ -124,10 +124,7 @@
             
             if(Object.keys(data).length === 0) {
                 // 新朋友：建立資料
-                await fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'createUser', phone: phone })
-                });
+               await fetch(`${GAS_URL}?action=createUser&phone=${phone}`);
             } else {
                 // 老朋友：讀取點數
                 const pts = parseFloat(data.points || 0);
