@@ -31,7 +31,10 @@
         </div>
 
         <div id="loyalty-section" class="hidden">
-            <p class="text-[10px] text-gray-400 mb-2">手機帳號：<span id="display-phone" class="font-bold"></span></p>
+           <div class="flex justify-between items-center mb-2 px-4">
+    <p class="text-[10px] text-gray-400">手機帳號：<span id="display-phone" class="font-bold text-gray-600"></span></p>
+    <button onclick="handleLogout()" class="text-[10px] text-pink-400 hover:text-pink-600 underline decoration-dotted">輸入錯誤？點此更換</button>
+</div>
             <div class="relative w-40 h-40 mx-auto mb-5 flex items-center justify-center border-8 border-pink-50 rounded-full">
                 <div class="text-center">
                     <span id="points-display" class="text-6xl font-black text-pink-400">0</span>
@@ -217,7 +220,13 @@
             msgElement.innerText = "系統繁忙，請稍後再試"; 
         }
     }
-
+// 登出功能：清除暫存並回歸初始狀態
+    function handleLogout() {
+        if (confirm("確定要更換手機號碼嗎？\n這將會清除目前的登入狀態喔！")) {
+            localStorage.removeItem('yuyu_phone'); 
+            location.reload(); 
+        }
+    }
     // 自動登入功能
     window.onload = () => {
         const savedPhone = localStorage.getItem('yuyu_phone');
