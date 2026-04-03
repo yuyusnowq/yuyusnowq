@@ -117,28 +117,41 @@
         setTimeout(() => { processCollection(phone); }, 1000); 
     }
 
-    async function ensureUserExists(phone) {
-        try {
-            const res = await fetch(`${GAS_URL}?action=searchPhone&phone=${phone}`);
-            const data = await res.json();
-            
-            if(Object.keys(data).length === 0) {
-                // 新朋友：建立資料
-               await fetch(`${GAS_URL}?action=createUser&phone=${phone}`);
-            } else {
-                // 老朋友：讀取點數
-                const pts = parseFloat(data.points || 0);
-                document.getElementById('points-display').innerText = pts;
-                if(pts >= 10) document.getElementById('reward-btn').classList.remove('hidden');
-            }
-            
-            // 設定 LINE 連結
+   async function ensureUserExists(phone) {
+    try {
+        const res = await fetch(`${GAS_URL}?action=searchPhone&phone=${phone}`);
+        const data = await res.json();
+        
+        if(Object.keys(data).length === 0) {
+            await fetch(`${GAS_URL}?action=createUser&phone=${phone}`);
+        } else {
+            const pts = parseFloat(data.points || 0);
+            document.getElementById('points-display').innerText = pts;
+            if(pts >= 10) document.getElementById('reward-btn').classList.remove('hidden');
+
+            // 【核心修正：檢查是否領過 LINE 點數】
+            const usedCodes = (data.used_codes || "").toString();
             const lineArea = document.getElementById('line-bonus-area');
-            const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
-            document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
-            lineArea.classList.remove('hidden');
-        } catch (e) { console.error("登入檢查失敗:", e); }
-    }
+            
+            if (usedCodes.includes("LINE05")) {
+                lineArea.classList.add('hidden'); // 領過了就藏起來
+            } else {
+                // 沒領過才設定連結並顯示
+                const msg = encodeURIComponent(`我的手機帳號是 ${phone}，我已加入好友，我要領取 0.5 點加碼獎勵！`);
+                document.getElementById('line-link').href = `https://line.me/R/oaMessage/${LINE_OA_ID}/?${msg}`;
+                
+                // 新增點擊事件：點了之後立刻去後端領點並藏起來
+                document.getElementById('line-link').onclick = async () => {
+                    await fetch(`${GAS_URL}?action=claimLine&phone=${phone}`);
+                    lineArea.classList.add('hidden');
+                    alert("申請已送出！請記得在 LINE 視窗按下「傳送」喔！");
+                    location.reload(); // 重新整理重新讀取點數
+                };
+                lineArea.classList.remove('hidden');
+            }
+        }
+    } catch (e) { console.error("登入檢查失敗:", e); }
+}
 
     async function handleManualSubmit() {
         const btn = event.target;
